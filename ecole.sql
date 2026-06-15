@@ -1,56 +1,52 @@
--- creation d'une base de donnee pour la gestion d'une ecole
+-- CREATION D'UNE BASE DE DONNEE POUR LA GESTION D'UNE ECOLE
 
--- cration des tables 
+-- =============CREATION DES TABLES=============
 
--- Table de base 
-
-CREATE Table classes(
-id INT AUTo_INCREMENT PRIMARY KEY,
-nom VARCHAR(50) NOT NULL,
-nineau VARCHAR(50)NOT NULl
+-- Table de base
+CREATE TABLE classes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(50) NOT NULL,
+    niveau VARCHAR(50) NOT NULL
 );
 
-CREATE Table professeurs(
-    id INT AUTO_INCREMENT  PRIMARY KEY,
-    nom VRCHAR (50) NOT NULL,
-    Prenm VARCHAR (100) NOT NULL,
-    email VARCHAR (200) NOT NULL
+CREATE TABLE professeurs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(50) NOT NULL,
+    prenom VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL
 );
 
-CREATE Table etudiants(
-    id INT AUTO_INCREMENT  PRIMARY KEY,
-    Nom VARCHAR (50) NOT NULL,
-    prenom(100)NOT NULL,
-    date_naissance  INT,
-    id_classes INT,
-    FOREIGN KEY (id_classes) REFERENCES classes(id)
+CREATE TABLE etudiants (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(50) NOT NULL,
+    prenom VARCHAR(50) NOT NULL,
+    date_naissance DATE,
+    id_classe INT,
+    FOREIGN KEY (id_classe) REFERENCES classes(id)
 );
 
 -- les relations
-
-CREATE Tables cours(
+CREATE TABLE cours (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nom VARCHAR (50) NOT NULL,
+    nom VARCHAR(50) NOT NULL,
     coefficient INT,
-    id_professeurs INT,
+    id_professeur INT,
     id_classe INT,
-    FOREIGN KEY (id_professeurs) REFERENCES professeurs(id),
-    FOREIGN KEY (id_classes) REFERENCES classes(id)
+    FOREIGN KEY (id_professeur) REFERENCES professeurs(id),
+    FOREIGN KEY (id_classe) REFERENCES classes(id)
 );
 
-CREATE Table notes(
+CREATE TABLE notes (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    notes DECIMAL,
-    id_etudiants INT,
-    id_professeurs INT,
+    note DECIMAL(4,2),
+    id_etudiant INT,
     id_cours INT,
-    date_exam INT,
-    FOREIGN KEY (id_etudiants)REFERENCES etudiants(id),
-    FOREIGN KEY(id_professeurs)REFERENCES professeurs(id),
-    FOREIGN KEY(id_cours)REFERENCES cours(id)
-) ;
+    date_examen DATE,
+    FOREIGN KEY (id_etudiant) REFERENCES etudiants(id),
+    FOREIGN KEY (id_cours) REFERENCES cours(id)
+);
 
--- =============INSERER LES DONNEES=============================
+-- =============INSERER LES DONNEES=============
 
 -- INSÉRER LES CLASSES
 INSERT INTO classes (nom, niveau) VALUES
@@ -96,9 +92,13 @@ INSERT INTO notes (note, id_etudiant, id_cours, date_examen) VALUES
 (13.0, 3, 4, '2024-01-15'),
 (11.5, 3, 5, '2024-01-16'),
 (17.0, 4, 4, '2024-01-15'),
+(15.0, 4, 5, '2024-01-16'),
+(14.5, 5, 6, '2024-01-15'),
+(12.5, 5, 7, '2024-01-16'),
+(19.0, 6, 6, '2024-01-15'),
+(16.0, 6, 7, '2024-01-16');
 
-
--- ===========MODIFIER ==================
+-- ===========MODIFIER==================
 -- Modifier le nom d'une classe
 UPDATE classes SET nom = 'CM2' WHERE id = 2;
 
@@ -115,11 +115,8 @@ UPDATE cours SET coefficient = 5 WHERE id = 1;
 UPDATE notes SET note = 16.0 WHERE id = 1;
 
 -- =============SUPPRIMER============
--- Supprimer une classe
-DELETE FROM classes WHERE id = 3;
-
--- Supprimer un professeur
-DELETE FROM professeurs WHERE id = 2;
+-- Supprimer une note
+DELETE FROM notes WHERE id = 1;
 
 -- Supprimer un étudiant
 DELETE FROM etudiants WHERE id = 2;
@@ -127,8 +124,11 @@ DELETE FROM etudiants WHERE id = 2;
 -- Supprimer un cours
 DELETE FROM cours WHERE id = 3;
 
--- Supprimer une note
-DELETE FROM notes WHERE id = 1;
+-- Supprimer un professeur
+DELETE FROM professeurs WHERE id = 2;
+
+-- Supprimer une classe
+DELETE FROM classes WHERE id = 3;
 
 -- =========INTERROGER LES DONNEES=======================
 -- VOIR TOUS LES ÉTUDIANTS
@@ -143,11 +143,60 @@ SELECT * FROM cours;
 -- VOIR TOUTES LES NOTES
 SELECT * FROM notes;
 
+-- VOIR LES ÉTUDIANTS AVEC LE NOM DE LEUR CLASSE
+SELECT etudiants.nom, etudiants.prenom, classes.nom AS classe
+FROM etudiants
+INNER JOIN classes ON etudiants.id_classe = classes.id;
 
+-- VOIR LES COURS AVEC LE NOM DU PROFESSEUR
+SELECT cours.nom, professeurs.nom AS professeur
+FROM cours
+INNER JOIN professeurs ON cours.id_professeur = professeurs.id;
 
+-- VOIR LES NOTES DES ÉTUDIANT AVEC LE NOM DU COURS
+SELECT etudiants.nom, etudiants.prenom, cours.nom AS cours, notes.note
+FROM notes
+INNER JOIN etudiants ON notes.id_etudiant = etudiants.id
+INNER JOIN cours ON notes.id_cours = cours.id;
 
+-- VOIR LES ÉTUDIANTS D'UNE CLASSE PRÉCISE
+SELECT etudiants.nom, etudiants.prenom, classes.nom AS classe
+FROM etudiants
+INNER JOIN classes ON etudiants.id_classe = classes.id
+WHERE classes.id = 1;
 
+-- ---- Analyser les données
+-- VOIR TOUTES LES MOYENNES
+SELECT etudiants.nom, etudiants.prenom, AVG(notes.note) AS moyenne
+FROM notes
+INNER JOIN etudiants ON notes.id_etudiant = etudiants.id
+GROUP BY etudiants.id;
 
+-- LA MEILLEURE MOYENNE
+SELECT etudiants.nom, etudiants.prenom, AVG(notes.note) AS moyenne
+FROM notes
+INNER JOIN etudiants ON notes.id_etudiant = etudiants.id
+GROUP BY etudiants.id
+ORDER BY moyenne DESC
+LIMIT 1;
 
+-- LA PLUS FAIBLE MOYENNE
+SELECT etudiants.nom, etudiants.prenom, AVG(notes.note) AS moyenne
+FROM notes
+INNER JOIN etudiants ON notes.id_etudiant = etudiants.id
+GROUP BY etudiants.id
+ORDER BY moyenne ASC
+LIMIT 1;
 
+-- NOMBRE D'ÉTUDIANTS PAR CLASSE
+SELECT classes.nom, COUNT(etudiants.id) AS nombre_etudiants
+FROM classes
+INNER JOIN etudiants ON classes.id = etudiants.id_classe
+GROUP BY classes.id;
 
+-- MOYENNE GÉNÉRALE PAR COURS
+SELECT cours.nom, AVG(notes.note) AS moyenne
+FROM notes
+INNER JOIN cours ON notes.id_cours = cours.id
+GROUP BY cours.id
+ORDER BY moyenne DESC;
